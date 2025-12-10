@@ -13,7 +13,7 @@ type Payment = {
 const EUR_RATE = 1.95583; // ФИКСИРАН КУРС: 1 EUR = 1.95583 лв
 
 export default function EuroCalculatorPage() {
-  const [documentAmountEUR, setDocumentAmountEUR] = useState<string>("50.00");
+  const [documentAmountEUR, setDocumentAmountEUR] = useState<string>("");
 
   const [newPaymentCurrency, setNewPaymentCurrency] = useState<Currency>("EUR");
   const [newPaymentAmount, setNewPaymentAmount] = useState<string>("");
