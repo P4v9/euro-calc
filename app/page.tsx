@@ -143,7 +143,7 @@ export default function EuroCalculatorPage() {
 
           <div className="flex flex-col gap-1 text-[11px] text-slate-400">
             <span>Фиксиран курс: 1 EUR = {EUR_RATE.toFixed(5)} лв</span>
-            <span>* Курсът е зададен в системата и не се променя от шофьорите.</span>
+            <span>* Курсът е зададен в системата и не се променя.</span>
           </div>
         </section>
 
