@@ -16,12 +16,14 @@ export default function RootLayout({
   return (
     <html lang="bg">
       <head>
-        {/* iOS / iPhone специфични неща */}
+        {/* iOS: да работи като web app */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta
           name="apple-mobile-web-app-status-bar-style"
           content="black-translucent"
         />
+        {/* за всеки случай и general PWA meta */}
+        <meta name="mobile-web-app-capable" content="yes" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="bg-slate-900">{children}</body>
