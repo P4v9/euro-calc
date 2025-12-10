@@ -10,55 +10,61 @@ type Payment = {
   amount: number;
 };
 
+const EUR_RATE = 1.95583; // ФИКСИРАН КУРС: 1 EUR = 1.95583 лв
+
 export default function EuroCalculatorPage() {
-  const [documentAmountBGN, setDocumentAmountBGN] = useState<string>("100.00");
-  const [rate, setRate] = useState<string>("1.95583");
+  const [documentAmountEUR, setDocumentAmountEUR] = useState<string>("50.00");
 
   const [newPaymentCurrency, setNewPaymentCurrency] = useState<Currency>("EUR");
   const [newPaymentAmount, setNewPaymentAmount] = useState<string>("");
 
   const [payments, setPayments] = useState<Payment[]>([]);
 
-  // Парсваме текст -> число
-  const parsedDocumentAmountBGN = useMemo(
-    () => parseFloat(documentAmountBGN.replace(",", ".")) || 0,
-    [documentAmountBGN]
+  // Парсване на документа
+  const parsedDocumentAmountEUR = useMemo(
+    () => parseFloat(documentAmountEUR.replace(",", ".")) || 0,
+    [documentAmountEUR]
   );
 
-  const parsedRate = useMemo(
-    () => parseFloat(rate.replace(",", ".")) || 1.95583,
-    [rate]
+  const documentAmountBGN = useMemo(
+    () => parsedDocumentAmountEUR * EUR_RATE,
+    [parsedDocumentAmountEUR]
   );
-
-  const documentAmountEUR = useMemo(() => {
-    if (parsedRate === 0) return 0;
-    return parsedDocumentAmountBGN / parsedRate;
-  }, [parsedDocumentAmountBGN, parsedRate]);
 
   function round2(num: number): number {
     return Math.round(num * 100) / 100;
   }
 
-  function paymentToBGN(payment: Payment): number {
-    if (payment.currency === "BGN") return payment.amount;
-    return payment.amount * parsedRate;
+  function paymentToEUR(payment: Payment): number {
+    if (payment.currency === "EUR") return payment.amount;
+    // BGN -> EUR
+    return payment.amount / EUR_RATE;
   }
 
-  const totalPaidBGN = useMemo(() => {
-    return round2(
-      payments.reduce((sum, p) => sum + paymentToBGN(p), 0)
-    );
-  }, [payments, parsedRate]);
+  function paymentToBGN(payment: Payment): number {
+    return paymentToEUR(payment) * EUR_RATE;
+  }
 
-  const remainingBGN = useMemo(
-    () => round2(parsedDocumentAmountBGN - totalPaidBGN),
-    [parsedDocumentAmountBGN, totalPaidBGN]
+  const totalPaidEUR = useMemo(() => {
+    return round2(
+      payments.reduce((sum, p) => sum + paymentToEUR(p), 0)
+    );
+  }, [payments]);
+
+  const totalPaidBGN = useMemo(
+    () => round2(totalPaidEUR * EUR_RATE),
+    [totalPaidEUR]
   );
 
-  const remainingEUR = useMemo(() => {
-    if (parsedRate === 0) return 0;
-    return round2(remainingBGN / parsedRate);
-  }, [remainingBGN, parsedRate]);
+  const remainingEUR = useMemo(
+    () => round2(parsedDocumentAmountEUR - totalPaidEUR),
+    [parsedDocumentAmountEUR, totalPaidEUR]
+  );
+
+  const remainingBGN = useMemo(
+    () => round2(remainingEUR * EUR_RATE),
+    [remainingEUR]
+  );
 
   function handleAddPayment() {
     const amount = parseFloat(newPaymentAmount.replace(",", "."));
@@ -86,10 +92,9 @@ export default function EuroCalculatorPage() {
 
   const addDisabled =
     !newPaymentAmount ||
-    parseFloat(newPaymentAmount.replace(",", ".")) <= 0 ||
-    parsedRate === 0;
+    parseFloat(newPaymentAmount.replace(",", ".")) <= 0;
 
-  const remainingIsNegative = remainingBGN < 0;
+  const remainingIsNegative = remainingEUR < 0;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center px-3 py-4">
@@ -99,7 +104,7 @@ export default function EuroCalculatorPage() {
             Евро / лев калкулатор
           </h1>
           <p className="text-xs text-slate-400">
-            Смята локално в телефона. Нищо не се записва на сървър.
+            Сума по документа в евро. Плащания в EUR и BGN по фиксиран курс.
           </p>
         </header>
 
@@ -112,42 +117,33 @@ export default function EuroCalculatorPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="block text-xs text-slate-300">
-                Сума (лв)
+                Сума (EUR)
               </label>
               <input
                 type="number"
                 inputMode="decimal"
                 step="0.01"
-                value={documentAmountBGN}
-                onChange={(e) => setDocumentAmountBGN(e.target.value)}
+                value={documentAmountEUR}
+                onChange={(e) => setDocumentAmountEUR(e.target.value)}
                 className="w-full rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
               />
             </div>
 
             <div className="space-y-1">
               <label className="block text-xs text-slate-300">
-                Курс евро → лев
+                Еквивалент (лв)
               </label>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="0.00001"
-                value={rate}
-                onChange={(e) => setRate(e.target.value)}
-                className={`w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-1 ${
-                  parsedRate === 0
-                    ? "border-red-500/70 bg-slate-900/60 focus:border-red-400 focus:ring-red-400"
-                    : "border-slate-600 bg-slate-900/60 focus:border-emerald-400 focus:ring-emerald-400"
-                }`}
-              />
+              <div className="w-full rounded-xl border border-slate-700 bg-slate-900/60 px-3 py-2 text-sm flex items-center justify-end">
+                <span className="font-semibold">
+                  {documentAmountBGN.toFixed(2)} лв
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="flex items-baseline justify-between text-xs text-slate-300">
-            <span>Документ в евро:</span>
-            <span className="font-semibold text-slate-100">
-              {documentAmountEUR.toFixed(2)} €
-            </span>
+          <div className="flex flex-col gap-1 text-[11px] text-slate-400">
+            <span>Фиксиран курс: 1 EUR = {EUR_RATE.toFixed(5)} лв</span>
+            <span>* Курсът е зададен в системата и не се променя от шофьорите.</span>
           </div>
         </section>
 
@@ -169,8 +165,8 @@ export default function EuroCalculatorPage() {
                 }
                 className="w-full rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
               >
-                <option value="BGN">BGN</option>
                 <option value="EUR">EUR</option>
+                <option value="BGN">BGN</option>
               </select>
             </div>
 
@@ -186,7 +182,7 @@ export default function EuroCalculatorPage() {
                 onChange={(e) => setNewPaymentAmount(e.target.value)}
                 className="w-full rounded-xl border border-slate-600 bg-slate-900/60 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
                 placeholder={
-                  newPaymentCurrency === "EUR" ? "напр. 20" : "напр. 10"
+                  newPaymentCurrency === "EUR" ? "напр. 20" : "напр. 50"
                 }
               />
             </div>
@@ -241,6 +237,11 @@ export default function EuroCalculatorPage() {
                       {index + 1}. {p.amount.toFixed(2)} {p.currency}
                     </div>
                     <div className="text-slate-400">
+                      В евро:{" "}
+                      <span className="text-slate-100">
+                        {paymentToEUR(p).toFixed(2)} €
+                      </span>
+                      {" · "}
                       В левове:{" "}
                       <span className="text-slate-100">
                         {paymentToBGN(p).toFixed(2)} лв
@@ -269,26 +270,35 @@ export default function EuroCalculatorPage() {
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-300">Общо по документа:</span>
-              <span className="font-semibold text-slate-100">
-                {parsedDocumentAmountBGN.toFixed(2)} лв
+              <span className="text-right font-semibold text-slate-100">
+                {parsedDocumentAmountEUR.toFixed(2)} €<br />
+                <span className="text-xs text-slate-400">
+                  ({documentAmountBGN.toFixed(2)} лв)
+                </span>
               </span>
             </div>
 
             <div className="flex justify-between">
               <span className="text-slate-300">Общо платено:</span>
-              <span className="font-semibold text-slate-100">
-                {totalPaidBGN.toFixed(2)} лв
+              <span className="text-right font-semibold text-slate-100">
+                {totalPaidEUR.toFixed(2)} €<br />
+                <span className="text-xs text-slate-400">
+                  ({totalPaidBGN.toFixed(2)} лв)
+                </span>
               </span>
             </div>
 
             <div className="flex justify-between items-baseline">
               <span className="text-slate-300">Остава за плащане:</span>
               <span
-                className={`font-semibold ${
+                className={`text-right font-semibold ${
                   remainingIsNegative ? "text-amber-300" : "text-emerald-300"
                 }`}
               >
-                {remainingBGN.toFixed(2)} лв ({remainingEUR.toFixed(2)} €)
+                {remainingEUR.toFixed(2)} €<br />
+                <span className="text-xs">
+                  ({remainingBGN.toFixed(2)} лв)
+                </span>
               </span>
             </div>
 
