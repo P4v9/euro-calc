@@ -120,7 +120,7 @@ export default function EuroCalculatorPage() {
                 Сума (EUR)
               </label>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 step="0.01"
                 value={documentAmountEUR}
@@ -175,7 +175,7 @@ export default function EuroCalculatorPage() {
                 Сума
               </label>
               <input
-                type="number"
+                type="text"
                 inputMode="decimal"
                 step="0.01"
                 value={newPaymentAmount}
